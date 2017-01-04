@@ -12,7 +12,7 @@ module IMS::LTI
       super(consumer_key, consumer_secret, params)
       @launch_url = params['launch_url']
     end
-    
+
     def process_post_request(post_request)
       request = extend_outcome_request(OutcomeRequest.new)
       request.process_post_request(post_request)
@@ -57,10 +57,12 @@ module IMS::LTI
 
       path = uri.path
       path = '/' if path.empty?
+
+      query_params = {}
       if uri.query && uri.query != ''
         CGI.parse(uri.query).each do |query_key, query_values|
           unless params[query_key]
-            params[query_key] = query_values.first
+            query_params[query_key] = query_values.first
           end
         end
       end
@@ -69,17 +71,21 @@ module IMS::LTI
               :timestamp => @timestamp,
               :nonce => @nonce
       }
-      request = consumer.create_signed_request(:post, path, nil, options, params)
+      request = consumer.create_signed_request(:post, path, nil, options, query_params.merge(params))
 
       # the request is made by a html form in the user's browser, so we
       # want to revert the escapage and return the hash of post parameters ready
       # for embedding in a html view
-      hash = {}
+
+      filtered_params = {}
       request.body.split(/&/).each do |param|
         key, val = param.split(/=/).map { |v| CGI.unescape(v) }
-        hash[key] = val
+        unless query_params.include?(key)
+          filtered_params[key] = val
+        end
       end
-      hash
+
+      filtered_params
     end
 
   end

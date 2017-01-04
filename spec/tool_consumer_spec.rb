@@ -34,7 +34,6 @@ describe IMS::LTI::ToolConsumer do
     @tc.launch_url = 'http://dr-chuck.com/ims/php-simple/tool.php?a=1&b=2&c=3%20%26a'
     res = @tc.generate_launch_data
     res['oauth_signature'].should eql('uF7LooyefQN5aocx7UlYQ4tQM5k=')
-    res['c'].should == "3 &a"
   end
 
   it "should generate a correct signature with a non-standard port" do
@@ -59,12 +58,12 @@ describe IMS::LTI::ToolConsumer do
     test_url('https://dr-chuck.com:80/ims/php-simple/tool.php?oi=hoyt', '3gwTnBk87PzT8GWIJFxvnCxZNmU=')
   end
 
-  it "should include URI query parameters" do
+  it "should not include URI query parameters" do
     @tc = IMS::LTI::ToolConsumer.new('12345', 'secret', 'resource_link_id' => 1, 'user_id' => 2)
     @tc.launch_url = 'http://www.yahoo.com?a=1&b=2'
     hash = @tc.generate_launch_data
-    hash['a'].should == '1'
-    hash['b'].should == '2'
+    hash.should_not have_key('a')
+    hash.should_not have_key('b')
   end
 
   it "should not allow overwriting other parameters from the URI query string" do
@@ -74,5 +73,4 @@ describe IMS::LTI::ToolConsumer do
     hash['user_id'].should == '2'
     hash['lti_message_type'].should == 'basic-lti-launch-request'
   end
-
 end
